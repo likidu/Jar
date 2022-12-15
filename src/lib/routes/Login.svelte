@@ -1,47 +1,44 @@
 <script lang="ts">
-  import { location, querystring, replace } from 'svelte-spa-router';
+  import { querystring, replace } from 'svelte-spa-router';
 
+  import InputRow from '@/ui/components/form/InputRow.svelte';
+  import SelectRow from '@/ui/components/form/SelectRow.svelte';
+  import Typography from '@/ui/components/Typography.svelte';
   import View from '@/ui/components/view/View.svelte';
   import ViewContent from '@/ui/components/view/ViewContent.svelte';
   import ViewHeader from '@/ui/components/view/ViewHeader.svelte';
-  import Typography from '@/ui/components/Typography.svelte';
 
   import svelteLogo from '@/assets/svelte.svg';
   import Button from '@/ui/components/buttons/Button.svelte';
-  import NumericRange from '@/ui/components/form/NumericRange.svelte';
+
+  import { Forum } from '@/lib/configs/config';
+  import { Jar } from '@/lib/services';
 
   let params: URLSearchParams;
+
   let title = 'Step 1';
+  let forum = Forum.HIPDA;
+  let username = 'likki';
+  let password = 'punkt..1';
 
   const Step = {
-    SendSMS: 'sendsms',
     Login: 'login',
   };
 
   $: params = new URLSearchParams($querystring);
 
-  function login() {
+  async function login() {
+    await Jar.login({ username, password, forum });
     return true;
   }
 
   function next(step: Number = 1) {
     if (!params.get('step')) {
       title = 'Step 2';
-      replace(`/login?step=${Step.SendSMS}`);
-    }
-
-    if (params.get('step') === Step.SendSMS) {
-      title = 'Step 3';
       replace(`/login?step=${Step.Login}`);
     }
-
     if (params.get('step') === Step.Login) {
-      if (step === -1) {
-        title = 'Step 2';
-        replace(`/login?step=${Step.SendSMS}`);
-      } else {
-        login();
-      }
+      login();
     }
   }
 </script>
@@ -51,7 +48,7 @@
   <ViewContent>
     {#if !params.get('step')}
       <div class="flex flex-col items-center justify-center">
-        <h2>App for KaiOS</h2>
+        <h2>Jar</h2>
         <img src={svelteLogo} class="w-32 h-32" alt="Svelte Logo" />
       </div>
       <Button
@@ -61,29 +58,24 @@
           onSelect: async () => next(),
         }}
       />
-    {:else if params.get('step') === Step.SendSMS}
-      <Typography align="center" padding="both">Enter your mobile phone</Typography>
-      <Button
-        title="Send Code"
-        navi={{
-          itemId: 'SEND',
-          onSelect: async () => next(),
-        }}
-      />
     {:else if params.get('step') === Step.Login}
-      <Typography align="center" padding="both">Enter your verification code</Typography>
+      <Typography align="center" padding="both">Enter your forum credentials</Typography>
+      <SelectRow
+        label="Forum"
+        value={forum}
+        options={[
+          { id: Forum.HIPDA, label: '4D4Y' },
+          { id: Forum.CHIPHELL, label: 'Chiphell' },
+        ]}
+        onChange={(val) => (forum = Forum[val.toString()])}
+      />
+      <InputRow label="User Name" value={username} placeholder="User name..." onChange={(val) => (username = val)} />
+      <InputRow label="Password" value={password} placeholder="Password..." onChange={(val) => (password = val)} />
       <Button
         title="Login"
         navi={{
           itemId: 'LOGIN',
           onSelect: async () => next(),
-        }}
-      />
-      <Button
-        title="Resend"
-        navi={{
-          itemId: 'RESEND',
-          onSelect: async () => next(-1),
         }}
       />
     {/if}
